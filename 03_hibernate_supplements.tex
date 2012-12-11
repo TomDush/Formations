@@ -1,0 +1,199 @@
+\documentclass[compress]{beamer}%
+\usepackage[utf8]{inputenc}
+\usetheme{Warsaw}
+
+
+\title{Hibernate}
+\subtitle{Utilisation avancées}
+
+\author{Thomas Duchatelle (duchatelle.thomas@gmail.com)}
+\institute{Capgemini, pour Yves Rocher}
+
+\setbeamertemplate{navigation symbols}{} 
+\useoutertheme{infolines}
+\setbeamertemplate{footline}
+{%
+  \leavevmode%
+  \hbox{\begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm plus1fill,rightskip=.3cm]{author in head/foot}%
+    \usebeamerfont{author in head/foot}\insertshortauthor
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.41\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm,rightskip=.3cm plus1fil]{title in head/foot}%
+    \usebeamerfont{title in head/foot}\insertshorttitle 
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.09\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm plus1fill,rightskip=.3cm]{author in head/foot}%
+    \usebeamerfont{author in head/foot}\insertframenumber/\inserttotalframenumber
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+\AtBeginSection[]{
+  \begin{frame}{Sommaire}
+  \small \tableofcontents[currentsection, hideothersubsections]
+  \end{frame} 
+}
+
+\definecolor{fontcolor}{rgb}{0.92,0.92,0.99}
+\usepackage{listings}
+\lstset{language=Java, numbers=left, tabsize=2, frame=single, breaklines=true,  numberstyle=\tiny\ttfamily,basicstyle=\small, framexleftmargin=5mm, backgroundcolor=\color{fontcolor}, xleftmargin=5mm, basicstyle=\tiny }
+
+\graphicspath{images}
+
+\begin{document}
+
+
+% Pages de présentations...
+\frame{\titlepage}
+  
+\section*{Plan}
+\frame{\tableofcontents[hideallsubsections]}
+	
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% CONSTAT DES DEGRADATIONS
+\section{Comment dégrader les performances avec Hibernate ?}
+
+\begin{frame}{Comment dégrader les performances avec Hibernate ?}
+	\framesubtitle{Plus facile qu'il n'y parait !}
+	
+	\begin{block}{Les opérations secrètes}
+	Hibernate réalise beaucoup d'opérations de façon transparente pour nous simplifier la vie. Est-ce que cela nous la simplifie vraiment ?
+	\end{block}		
+	
+	\pause
+	Quelques idées pour dégrader les performances : 
+	\begin{itemize}[<+->]
+	\item Ne jamais fermer la session : plus il y a d'objets dans la session, plus le \texttt{flush} sera long.
+	\item Charger toutes les dépendances d'un objet à chaque fois, même si on en a pas besoin
+	\item Ne pas vérifier les \texttt{select} générés : les jointures d'Hibernate sont idéales
+	\end{itemize}
+\end{frame}
+
+
+\section{Comment l'optimiser ?}
+
+\subsection{Les requêtes SELECT}
+\begin{frame}{Les requêtes SELECT}
+	
+	\begin{block}{HQL : ami ou ennemi}
+	Le langage HQL facilite l'écriture des requêtes SQL en éliminant la partie technique, et en axant la requête sur un point de vue \emph{objets}.
+	\end{block}
+	
+	\pause
+	\begin{alertblock}{Jointures}
+	Mais il ne remplace pas la connaissance SQL ! La facilité d'écriture du HQL cache certaines jointures, il ne faut pas les ignorer.
+	\end{alertblock}
+	
+	\pause
+	\begin{block}{Optimisations}
+	Une requête HQL s'optimise, comme une requête SQL.
+	\end{block}
+\end{frame}
+
+\subsection{Chargement des dépendances}
+\begin{frame}{Chargement des dépendances}
+	\framesubtitle{Chargement feignant (LAZY)}
+	
+	\begin{block}{LAZY}
+	Lorsque le chargement dit \texttt{LAZY} est activé sur une relation, la dépendance n'est chargée (requête en base) que lors de l'accès à la méthode \texttt{get}.
+	\end{block}
+	
+	\pause
+	\begin{itemize}
+	\item le mode est actif par défaut sur toutes les relations
+	\item son contraire est \texttt{EAGER}
+	\item l'objet doit être \emph{persistant}\footnote{persistant = rattaché à une session \emph{non fermée}} lors du premier accès à la méthode \texttt{getX}
+	\end{itemize}
+	
+	\pause	
+	\begin{block}{Initialisation d'une entité}
+	L'initialisation des attributs et collections peut être forcé en appelant la méthode \texttt{Hibernate.initialize(entity.getX());}
+	\end{block}
+\end{frame}
+
+\subsection{Grouper les requêtes}
+\begin{frame}[fragile]{Grouper les requêtes}
+	\framesubtitle{Charger les dépendances en une requête}
+	
+	\begin{exampleblock}{Cas d'exemple}	
+	Chargement d'une liste d'employés dont on souhaite, entre autre, connaitre l'employeur.
+	\end{exampleblock}
+	
+	\pause
+	Nombre de requêtes \texttt{select} en base :
+	\begin{itemize}
+	\item 1 sur la table \texttt{employee}
+	\item puis 1 par employé sur la table entreprise !
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Grouper les requêtes}
+	\framesubtitle{Forcer la jointure}
+	
+	\begin{block}{Par requête}	
+	L'idée d'optimisation est de forcer la jointure entre l'employé, et l'entreprise :\\
+	\begin{lstlisting}
+	SELECT e FROM Employee e OUTER JOIN FETCH e.enterprise
+	\end{lstlisting}
+	\end{block}
+	
+	\pause
+	\begin{block}{Par mapping}	
+	L'idée d'optimisation est de forcer la jointure entre l'employé, et l'entreprise :\\
+	\begin{lstlisting}
+	@Fetch(FetchMode.JOIN)
+	public Enterprise getEnterprise() { ... }
+	\end{lstlisting}
+	\end{block}
+	
+
+\end{frame}
+
+\begin{frame}[containsverbatim]{Grouper les requêtes}
+	\framesubtitle{Alternatives...}
+	\begin{block}{BatchSize}
+	Charger simultanément les dépendances de \texttt{n} attribut avec l'annotation \texttt{$@$BatchSize}.
+	\end{block}
+	
+	\begin{lstlisting}
+@BatchSize(size=20)
+public class Employee ... {
+	...
+	
+	@BatchSize(size=20)
+	public Enterprise getEnterprise() { ... }
+}
+	\end{lstlisting}
+	
+\end{frame}
+
+
+\subsection{Cascades}
+\begin{frame}{Les cascades}
+	\framesubtitle{Ici le Niagara}
+
+	\begin{block}{Cascade}
+	Le paramètre cascade est présent sur toutes les associations. Il définie le comportement de la session vis à vis des dépendances.
+	\end{block}
+	
+	\pause
+	Les principales valeurs possibles :
+	\begin{itemize}
+	\item \texttt{PERSIST} : les dépendances sont sauvegardées si l'entité l'est
+	\item \texttt{REMOVE} : les dépendances sont supprimées avec l'entité
+	\item \texttt{ALL} : toutes les actions sur l'entité sont répercutées sur les dépendances.
+	\end{itemize}
+\end{frame}
+
+
+\section*{Fin}
+
+\begin{frame}
+	\frametitle{Fin}
+	\begin{center}
+		\huge
+		Merci, des questions ?
+	\end{center}
+\end{frame}
+
+
+\end{document}
