@@ -7,3 +7,5 @@
 *.vrb
 *.snm
 *.nav
+*.backup
+*~

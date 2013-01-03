@@ -31,7 +31,8 @@
 
 \graphicspath{images}
 
-\title{ORM : Hibernate}
+\title{Initiation aux frameworks : \emph{Hibernate}}
+\subtitle{Hibernate et introduction du concept d'ORM}
 \author{Thomas Duchatelle (duchatelle.thomas@gmail.com)}
 \institute{Capgemini, pour Yves Rocher}
 
@@ -417,7 +418,8 @@ session.saveOrUpdate(employee);
 	\framesubtitle{Rappels...}
 	
 	\begin{block}{Sauvegarde des entités}
-	Pour être sauvegardée, une entité doit être \textbf{persistante} : liée à la session.
+	Pour être sauvegardée, une entité doit être \textbf{persistante} : liée à la session.\par
+	Puis la session doit être \textbf{commitée}.
 	\end{block}
 	
 	\pause
@@ -459,6 +461,15 @@ session.saveOrUpdate(employee);
 \begin{frame}[fragile]{Déclaration d'une entité}
 	\framesubtitle{Configuration de mapping minimale}
 	
+	Table minimale : 
+	\begin{lstlisting}
+	CREATE TABLE employee (
+	  id INTEGER PRIMARY KEY
+	);
+	\end{lstlisting}
+	
+	\pause
+	Objet correspondant :
 	\begin{lstlisting}
 	@Entity
 	public class Employee implements Serializable {
@@ -475,13 +486,6 @@ session.saveOrUpdate(employee);
 	}
 	\end{lstlisting}
 	
-	\pause
-	Equivalance BDD : 
-	\begin{lstlisting}
-	CREATE TABLE employee (
-	  id INTEGER PRIMARY KEY
-	);
-	\end{lstlisting}
 	
 \end{frame}
 
@@ -501,7 +505,21 @@ session.saveOrUpdate(employee);
 
 \subsection{Personalisations des noms}
 \begin{frame}[fragile]{Personalisations des noms}
+
 	
+	Table simple : 
+	\begin{lstlisting}
+CREATE TABLE employees_table (
+  employee_id INTEGER NOT NULL AUTO_INCREMENT,
+  name VARCHAR(255),
+  birthdate DATE,
+  
+  PRIMARY KEY (employee_id)
+);
+	\end{lstlisting}
+	
+	\pause
+	\'Equivalence :
 	\begin{lstlisting}
 @Entity
 @Table(name = "employees_table")
@@ -517,18 +535,6 @@ public class Employee implements Serializable {
   
   public Date getBirthdate() { ... }
 }
-	\end{lstlisting}
-	
-	\pause
-	Equivalance BDD : 
-	\begin{lstlisting}
-CREATE TABLE employees_table (
-  employee_id INTEGER NOT NULL AUTO_INCREMENT,
-  name VARCHAR(255),
-  birthdate DATE,
-  
-  PRIMARY KEY (employee_id)
-);
 	\end{lstlisting}
 	
 \end{frame}
@@ -552,39 +558,73 @@ CREATE TABLE employees_table (
 \begin{frame}[fragile]{Relations OneToMany -- ManyToOne}
 	\framesubtitle{Un employé et son entreprise}
 	
-	\begin{itemize}
-		\item Classe \texttt{Employee} : 
-		\begin{lstlisting}
+	Stucture BDD :	
+	\begin{lstlisting}
+CREATE TABLE employee ( ...
+  enterprise_id INTEGER REFERENCES enterprise(enterprise_id)
+);
+
+CREATE TABLE enterprise (
+  enterprise_id INTEGER PRIMARY KEY,  ...
+)
+	\end{lstlisting}
+	
+	\pause
+	Classe \texttt{Employee} : 
+	\begin{lstlisting}
 // 'enterprise_id' est le nom de la colonne clef etrangere presente dans la table employee.
 @ManyToOne(cascade=CascadeType.ALL)
 @JoinColumn(name = "enterprise_id")
-public Enterprise getEnterprise() { ... }
-		\end{lstlisting}
+public Enterprise getEnterprise() { return this.enterprise; }
+	\end{lstlisting}
 	
-		\item Classe \texttt{Enterprise}
-		\begin{lstlisting}
+	\pause
+	Classe \texttt{Enterprise} :
+	\begin{lstlisting}
 // 'enterprise' est le nom de l'attribut dans la classe Employee
 @OneToMany(mappedBy = "enterprise", cascade=CascadeType.ALL)
-public Set<Employee> getEmployees() { ... }
-		\end{lstlisting}	
-	\end{itemize}
+public Set<Employee> getEmployees() { return this.employees; }
+	\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[containsverbatim]{Relations ManyToMany}
+	\framesubtitle{Des employés et des projets}
+	
+	Stucture BDD :	
+	\begin{lstlisting}
+CREATE TABLE employee (
+  employee_id INTEGER PRIMARY KEY, ...
+);
+
+CREATE TABLE project (
+  enterprise_id INTEGER PRIMARY KEY,  ...
+)
+
+CREATE TABLE employee_project (
+  employee_id INTEGER,
+  enterprise_id INTEGER,
+  CONSTRAINT employee_project_pk PRIMARY KEY (employee_id,enterprise_id)
+)
+	\end{lstlisting}
+	
 
 \end{frame}
 
 \begin{frame}[fragile]{Relations ManyToMany}
 	\framesubtitle{Des employés et des projets}
-	
-	\begin{itemize}
+	\begin{itemize}[<+->]
 		\item Classe \texttt{Employee} : 
 		\begin{lstlisting}
 // 'EMPLOYEE_PROJECT' est le nom de la table de jointure
 // EMPLOYEE_ID est le nom de la clef etrangere table de jointure -> table EMPLOYEE
 // PROJECT_ID est le nom de la clef etrangere table de jointure -> table PROJECT
+
 @ManyToMany(cascade = CascadeType.ALL)
 @JoinTable(
-	name="EMPLOYEE_PROJECT",
-	joinColumns=@JoinColumn(name="EMPLOYEE_ID"),
-	inverseJoinColumns=@JoinColumn(name="PROJECT_ID")
+  name="EMPLOYEE_PROJECT",
+  joinColumns=@JoinColumn(name="EMPLOYEE_ID"),
+  inverseJoinColumns=@JoinColumn(name="PROJECT_ID")
 )
 public Set<Project> getProjects() { ... }
 		\end{lstlisting}
@@ -592,9 +632,10 @@ public Set<Project> getProjects() { ... }
 		\item Classe \texttt{Project}
 		\begin{lstlisting}
 // 'projects' est le nom de l'attribut dans la classe Employee
+
 @ManyToMany(
-	cascade = CascadeType.ALL,
-	mappedBy = "projects"
+  cascade = CascadeType.ALL,
+  mappedBy = "projects"
 )
 public Set<Employee> getEmployees() { ... }
 		\end{lstlisting}	
@@ -717,8 +758,8 @@ WHERE ent.name = ?;
 	\begin{lstlisting}
 SELECT DISTINCT e.*
 FROM employee e
-    INNER JOIN employee_project ON e.employee_id = ep.employee_id
-    INNER JOIN project ON ep.project_id = p.projet_id
+    INNER JOIN employee_project ep ON e.employee_id = ep.employee_id
+    INNER JOIN project p ON ep.project_id = p.projet_id
 WHERE p.manager_id = ?;
 	\end{lstlisting}
 	\end{exampleblock}
@@ -776,6 +817,7 @@ List<Employee> employees = criteria.list();
 		\item accesseurs (getters et setters) obligatoires
 		\item seules les entités liées à la session seront sauvegardées, updatées ou supprimées
 		\item pour lier une entité à la session : \texttt{saveOrUpdate} ou \texttt{delete}
+		\item les entités seront sauvegardées/supprimées lors du \textbf{commit de la transaction}.
 	\end{itemize}
 \end{frame}
 	
