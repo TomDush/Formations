@@ -1,0 +1,303 @@
+\documentclass[compress]{beamer}%
+\usepackage[utf8]{inputenc}
+\usetheme{Warsaw}
+
+% \usepackage
+
+\title{Initiation aux frameworks : \emph{JUnit}}
+\subtitle{Automatiser les tests unitaires avec JUnit, FestAssert et Mockito}
+
+\author{Thomas Duchatelle (duchatelle.thomas@gmail.com)}
+\institute{Capgemini, pour Yves Rocher}
+
+\setbeamertemplate{navigation symbols}{} 
+\useoutertheme{infolines}
+\setbeamertemplate{footline}
+{%
+  \leavevmode%
+  \hbox{\begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm plus1fill,rightskip=.3cm]{author in head/foot}%
+    \usebeamerfont{author in head/foot}\insertshortauthor
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.41\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm,rightskip=.3cm plus1fil]{title in head/foot}%
+    \usebeamerfont{title in head/foot}\insertshorttitle 
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.09\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm plus1fill,rightskip=.3cm]{author in head/foot}%
+    \usebeamerfont{author in head/foot}\insertframenumber/\inserttotalframenumber
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+\AtBeginSection[]{
+  \begin{frame}{Sommaire}
+  \small \tableofcontents[currentsection, hideothersubsections]
+  \end{frame} 
+}
+
+\definecolor{fontcolor}{rgb}{0.92,0.92,0.99}
+\usepackage{listings}
+\lstset{language=Java, numbers=left, tabsize=2, frame=single, breaklines=true,  numberstyle=\tiny\ttfamily,basicstyle=\small, framexleftmargin=5mm, backgroundcolor=\color{fontcolor}, xleftmargin=5mm, basicstyle=\tiny }
+
+\graphicspath{images}
+
+\begin{document}
+
+
+% Pages de présentations...
+\frame{\titlepage}
+  
+\section*{Plan}
+\frame{\tableofcontents[hideallsubsections]}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% TEST UNITAIRES
+\section{Tests unitaires}
+
+\subsection{Objectifs et définitions}
+
+\begin{frame}{Tests unitaires}
+	\framesubtitle{Objectifs et définitions}
+	
+	\begin{block}{Tests unitaires}
+		Isoler une fonctionnalité ou un composant et tester son fonctionnement hors contexte. 
+	\end{block}
+	
+	\pause
+	\begin{block}{Dans le cadre de la \emph{Séparation des Préoccupations}}
+		Une classe de test pour chaque brique logicielle, testée indépendamment des autres.
+	\end{block}
+	
+\end{frame}
+
+\begin{frame}
+	
+	Intérêts des tests unitaires :
+	\begin{itemize}[<+->]
+	\item tester tous les cas possibles d'une briques : passant et non-passant
+	\item assurer un non-régression sur les fonctionnalités testées, quelque soit le développeur
+	\item ne nécessite pas d'avoir fini l'application pour tester un composant
+	\end{itemize}
+	
+\end{frame}
+
+\subsection{Bonnes pratiques}
+
+\begin{frame}{Bonne pratique}
+	\framesubtitle{TDD : Test Driven Development}
+
+	\begin{block}{Développement Piloté par les Tests}
+		Méthode de développement consistant à écrire les tests avant de développer le code.
+	\end{block}
+	
+	\pause
+	Nouveau développement : 
+	\begin{enumerate}
+		\item écrire l'interface de la brique à développer
+		\item écrire les tests, à partir des spécifications
+		\item vérifier que les tests \textbf{ne} passent \textbf{pas}
+		\item développer la fonctionnalité
+		\item vérifier que les tests passent
+	\end{enumerate}
+	
+	% correctif ?
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% JUNIT
+\section{JUNIT}
+
+\subsection{Framework JUnit}
+
+\begin{frame}{Framework Junit}
+
+	\begin{block}{JUnit}
+		JUnit est un \emph{framework} exécutant les tests unitaires d'une application.
+	\end{block}
+	
+	\pause
+	\begin{description}
+	\item[Framework] JUnit s'occupe de lister les tests à exécuter, les faire passer dans le contexte approprié et collecter les résultats afin d'en fournir un rapport.
+	\end{description}
+	
+	\pause
+	\begin{block}{Maven et JUnit}
+		Maven, outils de compilation, exécute les tests unitaires à chaque compilation. En cas d'échec, il ne produit pas le binaire.
+	\end{block}
+
+\end{frame}
+
+
+\subsection{Première classe de test}
+
+\begin{frame}[fragile]{Première classe de test}
+	\framesubtitle{... avec Spring}
+	
+	\begin{lstlisting}	
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = {
+  "classpath:spring/addressrepository-core.xml",
+  "classpath:spring/mocked-persistence.xml"
+})
+public class CalculatriceImplTest {
+
+  @Inject
+  private ICalculatrice calculatrice;
+
+  @Test
+  public void test_une_fonction() throws Exceptions {
+	// mon test
+  }
+}
+	\end{lstlisting}
+	
+	\pause
+	\begin{itemize}[<+->]
+	\item \texttt{$@$RunWith} : détermine l'outil à utiliser pour les tests. Ici une extension pour Spring.
+	\item \texttt{$@$ContextConfiguration} : liste des fichiers de configuration de Spring
+	\item \texttt{$@$Test} : déclare la méthode comme un test à exécuter. La méthode doit-être publique, sans argument ni de retour.
+	\end{itemize}
+
+\end{frame}
+
+\subsection{Structure d'une méthode de test}
+
+\begin{frame}[fragile]{Structure d'une méthode de test}
+
+	Une méthode de test comporte 3 parties :
+	\begin{enumerate}
+	\pause
+	\item création du jeu de données
+	\pause
+	\item exécution du test
+	\pause
+	\item vérification des résultats
+	\end{enumerate}
+	
+\end{frame}
+
+\begin{frame}[containsverbatim]{Exemple simple}
+
+	\begin{lstlisting}
+@Test
+public void testAdd() {
+  // 1. Initilization
+  int a = 6;
+  int b = 12;
+  
+  // 2. Execution
+  int result = calculatrice.add(a, b);
+  
+  // 3. Verification / Assertion
+  assertThat(result).isEqualTo(18);
+}
+	\end{lstlisting}
+\end{frame}
+
+
+\section{Fest Assert}
+
+\subsection{Définition}
+
+\begin{frame}{Fest Assert}
+	\framesubtitle{Écrire les assertions dans un langage courant}
+	
+	\begin{block}{Fest Assert}
+		Outils facilitant l'écriture des assertions pour se rapprocher d'un langage courant.
+	\end{block}
+
+\end{frame}
+
+\subsection{Assertions basiques}
+% test int, string, collection (+extract.from) , exception, objet spécial
+
+\begin{frame}[containsverbatim]{Assertions : types basiques}
+	
+	\begin{lstlisting}
+// types primitifs
+assertThat(12 - 9).isEqualTo(3).isGreaterThanOrEqualTo(3).isLessThan(4);
+
+// String
+assertThat("Bonjour monde !").isEqualToIgnoringCase("BONJOUR MONDE !).startWith("Bonjour").contains("mon");
+
+// Instance / classe
+assertThat(yoda).isInstanceOf(Jedi.class);
+assertThat(frodo.getName()).isEqualTo("Frodo");
+assertThat(frodo).isNotEqualTo(sauron);
+
+
+assertThat(frodo).isIn(fellowshipOfTheRing);
+assertThat(sauron).isNotIn(fellowshipOfTheRing);
+	\end{lstlisting}
+\end{frame}
+
+
+\begin{frame}[containsverbatim]{Assertions : collections}
+	
+	\begin{lstlisting}
+assertThat(frodo).isIn(fellowshipOfTheRing);
+assertThat(sauron).isNotIn(fellowshipOfTheRing);
+
+assertThat(fellowshipOfTheRing).hasSize(9)
+                               .contains(frodo, sam)
+                               .excludes(sauron);
+	\end{lstlisting}
+\end{frame}
+
+
+\begin{frame}[containsverbatim]{Assertions : exceptions}
+	
+	\begin{lstlisting}
+try {
+  calculatrice.div(42, 0); // argggl !
+  // si ArithmeticException n'a pas ete levee, le test echoue avec le message : 
+  // "Expected IndexOutOfBoundsException to be thrown"
+  failBecauseExceptionWasNotThrown(ArithmeticException.class);
+} catch (Exception e) {
+  assertThat(e).isInstanceOf(ArithmeticException.class)
+               .hasMessageContaining("by zero")
+               .hasNoCause();
+}
+	\end{lstlisting}
+\end{frame}
+
+
+
+\section{Mockito}
+
+\section{Conclusion}
+%Ne remplace pas les tests d'intégration !
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
