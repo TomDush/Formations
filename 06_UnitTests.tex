@@ -75,7 +75,7 @@
 	Intérêts des tests unitaires :
 	\begin{itemize}[<+->]
 	\item tester tous les cas possibles d'une briques : passant et non-passant
-	\item assurer un non-régression sur les fonctionnalités testées, quelque soit le développeur
+	\item assurer la non-régression sur les fonctionnalités testées, quelque soit le développeur
 	\item ne nécessite pas d'avoir fini l'application pour tester un composant
 	\end{itemize}
 	
@@ -92,15 +92,35 @@
 	
 	\pause
 	Nouveau développement : 
-	\begin{enumerate}
+	\begin{enumerate}[<+->]
 		\item écrire l'interface de la brique à développer
 		\item écrire les tests, à partir des spécifications
 		\item vérifier que les tests \textbf{ne} passent \textbf{pas}
-		\item développer la fonctionnalité
+		\item implémenter la fonctionnalité
 		\item vérifier que les tests passent
 	\end{enumerate}
 	
 	% correctif ?
+\end{frame}
+
+\begin{frame}
+
+	Évolution : 
+	\pause
+	\begin{enumerate}
+		\item modifier / compléter les tests unitaires
+		\item vérifier que les tests \textbf{ne} passent \textbf{pas}
+		\item développer l'évolution
+		\item vérifier que les tests passent
+	\end{enumerate}
+	
+	\pause
+	Correctif : 
+	\begin{enumerate}
+		\item ajouter un test mettant en évidence le bug (il ne passe pas)
+		\item développer le correctif
+		\item vérifier que les tests passent (nouveau + non régression)
+	\end{enumerate}
 \end{frame}
 
 
@@ -113,14 +133,15 @@
 \begin{frame}{Framework Junit}
 
 	\begin{block}{JUnit}
-		JUnit est un \emph{framework} exécutant les tests unitaires d'une application.
+		JUnit est un \emph{framework} exécutant les tests unitaires d'une application.\\
+		\pause
+		\begin{itemize}
+		\item liste les tests à exécuter
+		\item les exécute dans le contexte approprié
+		\item collecte les résultats afin d'en fournir un rapport.
+		\end{itemize}
 	\end{block}
-	
-	\pause
-	\begin{description}
-	\item[Framework] JUnit s'occupe de lister les tests à exécuter, les faire passer dans le contexte approprié et collecter les résultats afin d'en fournir un rapport.
-	\end{description}
-	
+		
 	\pause
 	\begin{block}{Maven et JUnit}
 		Maven, outils de compilation, exécute les tests unitaires à chaque compilation. En cas d'échec, il ne produit pas le binaire.
@@ -137,8 +158,7 @@
 	\begin{lstlisting}	
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
-  "classpath:spring/addressrepository-core.xml",
-  "classpath:spring/mocked-persistence.xml"
+  "classpath:spring/employeerepository-context.xml"
 })
 public class CalculatriceImplTest {
 
@@ -163,15 +183,12 @@ public class CalculatriceImplTest {
 
 \subsection{Structure d'une méthode de test}
 
-\begin{frame}[fragile]{Structure d'une méthode de test}
+\begin{frame}{Structure d'une méthode de test}
 
 	Une méthode de test comporte 3 parties :
-	\begin{enumerate}
-	\pause
+	\begin{enumerate}[<+->]
 	\item création du jeu de données
-	\pause
 	\item exécution du test
-	\pause
 	\item vérification des résultats
 	\end{enumerate}
 	
@@ -206,6 +223,11 @@ public void testAdd() {
 	\begin{block}{Fest Assert}
 		Outils facilitant l'écriture des assertions pour se rapprocher d'un langage courant.
 	\end{block}
+	
+	\pause
+	\begin{description}
+	\item[Assertion] Condition qui doit être vérifiée pour continuer. Si elle ne l'est pas, le test s'interrompt et il est en échec (\emph{failure}).
+	\end{description}
 
 \end{frame}
 
@@ -216,19 +238,19 @@ public void testAdd() {
 	
 	\begin{lstlisting}
 // types primitifs
-assertThat(12 - 9).isEqualTo(3).isGreaterThanOrEqualTo(3).isLessThan(4);
+assertThat(12 - 9).isEqualTo(3)
+                  .isGreaterThanOrEqualTo(3)
+                  .isLessThan(4);
 
 // String
-assertThat("Bonjour monde !").isEqualToIgnoringCase("BONJOUR MONDE !).startWith("Bonjour").contains("mon");
+assertThat(frodo.getName()).isEqualTo("Frodo");
+assertThat("Bonjour monde !").isEqualToIgnoringCase("BONJOUR MONDE !")
+                             .startWith("Bonjour")
+                             .contains("mon");
 
 // Instance / classe
 assertThat(yoda).isInstanceOf(Jedi.class);
-assertThat(frodo.getName()).isEqualTo("Frodo");
 assertThat(frodo).isNotEqualTo(sauron);
-
-
-assertThat(frodo).isIn(fellowshipOfTheRing);
-assertThat(sauron).isNotIn(fellowshipOfTheRing);
 	\end{lstlisting}
 \end{frame}
 
@@ -242,6 +264,9 @@ assertThat(sauron).isNotIn(fellowshipOfTheRing);
 assertThat(fellowshipOfTheRing).hasSize(9)
                                .contains(frodo, sam)
                                .excludes(sauron);
+                               
+
+assertThat(extractProperty("age", Integer.class).from(fellowshipOfTheRing)).contains(35, 17);
 	\end{lstlisting}
 \end{frame}
 
@@ -251,9 +276,11 @@ assertThat(fellowshipOfTheRing).hasSize(9)
 	\begin{lstlisting}
 try {
   calculatrice.div(42, 0); // argggl !
+  
   // si ArithmeticException n'a pas ete levee, le test echoue avec le message : 
   // "Expected IndexOutOfBoundsException to be thrown"
   failBecauseExceptionWasNotThrown(ArithmeticException.class);
+  
 } catch (Exception e) {
   assertThat(e).isInstanceOf(ArithmeticException.class)
                .hasMessageContaining("by zero")
@@ -263,8 +290,81 @@ try {
 \end{frame}
 
 
+\begin{frame}[fragile]{Assertions : objets}
+	\framesubtitle{Écrire ses propres assertions}
+	
+	\begin{lstlisting}
+// Objectifs :
+assertThat(employee).isHiredBy(yvesRocher)
+                    .hasEmail("foo.bar@yrnet.com")
+                    .hasEmailDomain("yrnet.com")
+                    .isRA()
+                    .isRaOf("rc", "vpci");
+	\end{lstlisting}
+	
+\end{frame}
+
+\begin{frame}[fragile]{Assertions : objets}
+	\begin{lstlisting}
+public class EmployeeAssertion extends AbstractAssert<EmployeeAssertion, Employee> {
+  
+  /** Constructeur obligatoire */
+  public EmployeeAssertion(Employee actual) {
+    super(actual, EmployeeAssertion.class);
+  }
+  
+  public EmployeeAssertion isRa() {
+    if(actual.getManagedApplications().isEmpty()) {
+      throw new AssertionError("Employee is not RA");
+    }
+    
+    return this;
+  }
+  
+  public EmployeeAssertion isHiredBy(Enterprise expected) {
+    if( expected != null && ! expected.isEquals(actual.getEnterprise())) {
+      throw new AssertionError("Expected enterprise to be " + expected + ", but was " + actual.getEnterprise());
+    }
+    
+    return this;
+  }
+}
+	\end{lstlisting}
+	
+	\pause
+	\begin{lstlisting}
+public static EmployeeAssertion assertThat(Employee employee) {
+  return new EmployeeAssertion(employee);
+}
+	\end{lstlisting}
+\end{frame}
+
 
 \section{Mockito}
+
+\subsection{Mocks}
+
+\begin{frame}{Qu'est-ce qu'un \emph{Mock} ?}
+
+	\begin{description}
+	\item[Mock] Bouchon ayant un comportement spécifique à chaque test, et où il est possible de contrôler les appels
+	\item[Mocker] (terme non officiel) Remplacer les dépendances d'une brique applicative par des \emph{mocks}.
+	\end{description}
+
+	\pause
+	\begin{block}{Mockito}
+		\emph{Mockito} est un framework qui isole une brique, et vérifie son comportement vis à vis de ses dépendances. Il propose une API pour valider les appels, et diriger le comportement des autres briques.
+	\end{block}
+
+\end{frame}
+
+\subsection{Utiliser Mockito}
+\begin{frame}{Utiliser Mockito}
+
+\end{frame}
+
+\subsection{Assertions}
+
 
 \section{Conclusion}
 %Ne remplace pas les tests d'intégration !
