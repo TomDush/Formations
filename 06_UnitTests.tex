@@ -91,8 +91,23 @@
 	\end{block}
 	
 	\pause
-	Nouveau développement : 
+	\begin{alertblock}{Correctifs}
+		Avant de corriger le code, reproduire l'erreur en test unitaire !
+	\end{alertblock}
+	
+	\pause
+	Correctif : 
 	\begin{enumerate}[<+->]
+		\item ajouter un test mettant en évidence le bug. \emph{Il ne doit pas passer.}
+		\item développer le correctif
+		\item vérifier que les tests passent (nouveau + non régression)
+	\end{enumerate}
+	
+\end{frame}
+
+\begin{frame}
+	Nouveau développement : 
+	\begin{enumerate}
 		\item écrire l'interface de la brique à développer
 		\item écrire les tests, à partir des spécifications
 		\item vérifier que les tests \textbf{ne} passent \textbf{pas}
@@ -100,13 +115,9 @@
 		\item vérifier que les tests passent
 	\end{enumerate}
 	
-	% correctif ?
-\end{frame}
 
-\begin{frame}
-
-	Évolution : 
 	\pause
+	Évolution : 
 	\begin{enumerate}
 		\item modifier / compléter les tests unitaires
 		\item vérifier que les tests \textbf{ne} passent \textbf{pas}
@@ -114,13 +125,6 @@
 		\item vérifier que les tests passent
 	\end{enumerate}
 	
-	\pause
-	Correctif : 
-	\begin{enumerate}
-		\item ajouter un test mettant en évidence le bug (il ne passe pas)
-		\item développer le correctif
-		\item vérifier que les tests passent (nouveau + non régression)
-	\end{enumerate}
 \end{frame}
 
 
@@ -346,28 +350,134 @@ public static EmployeeAssertion assertThat(Employee employee) {
 
 \begin{frame}{Qu'est-ce qu'un \emph{Mock} ?}
 
-	\begin{description}
-	\item[Mock] Bouchon ayant un comportement spécifique à chaque test, et où il est possible de contrôler les appels
+	\begin{description}[<+->]
+	\item[Mock] Bouchon dont le comportement peut-être décrit pour chaque test et où les appels peuvent être contrôlés.
 	\item[Mocker] (terme non officiel) Remplacer les dépendances d'une brique applicative par des \emph{mocks}.
 	\end{description}
 
-	\pause
+\end{frame}
+
+\begin{frame}{Mockito}
+	\framesubtitle{\emph{"A mocking framework that tastes really good."}}
+
 	\begin{block}{Mockito}
 		\emph{Mockito} est un framework qui isole une brique, et vérifie son comportement vis à vis de ses dépendances. Il propose une API pour valider les appels, et diriger le comportement des autres briques.
 	\end{block}
-
+	
 \end{frame}
 
 \subsection{Utiliser Mockito}
-\begin{frame}{Utiliser Mockito}
+\begin{frame}[containsverbatim]{Mocker une brique applicative}
 
+	\begin{lstlisting}
+public class EmployeeManagerImplTest {
+
+  /** Classe mockee */
+  @InjectMock
+  private EmployeeManagerImpl employeeManager;
+  
+  /** Mock du generateur d'email */
+  @Mock
+  private IEmailGenerator emailGenerator;
+  
+  /** Mock de la couche de persistance */
+  @Mock
+  private IEmployeeDAO employeeDao;
+  
+  /** Espionne/Controle les appels au generateur de matricule */
+  @Inject
+  @Spy
+  private IEmployeeNumberGenerator employeeNumberGenerator;
+}
+	\end{lstlisting}
+	
 \end{frame}
 
 \subsection{Assertions}
+\begin{frame}[containsverbatim]{Assertions}
+	\framesubtitle{Vérifier que les dépendances soient correctement appelées}
 
+	\begin{lstlisting}
+@Test
+public void test_create_new_employee() {
+  // CREATION DU JEU DE TEST
+  when(emailGenerator.generateEmail(any(Employee.class))).thenReturn("ironman@stark-enterprise.us");
+  when(employeeNumberGenerator.generateNumber()).thenReturn(42, 43, 44);
+  
+  // EXECUTION
+  Employee employee = new Employee("Tony", "Stark");
+  employee.setEnterprise("Stark");
+  
+  employeeManager.createNewEmployee(employee);
+  
+  // ASSERTIONS
+  // mon client est complet
+  assertThat(employee).hasFirstnameAndLastName("TONY", "STARK")
+  					  .isHiredBy("stark")
+  					  .hasEmail("ironman@stark-enterprise.us")
+  					  .hasNumber(42);
+  
+  // les generateurs ont ete correctement appeles et l'employe a ete sauvegarde
+  verify(emailGenerator).generateEmail(employee);
+  verify(employeeNumberGenerator).generateNumber();
+  verify(employeeDao).save(employee);
+  
+  verifyNoMoreInteractions(employeeDao, employeeNumberGenerator, emailGenerator);
+}
+\end{lstlisting}
+	
+\end{frame}
 
 \section{Conclusion}
+
+\begin{frame}{Ce qu'il faut retenir...}
+	\framesubtitle{Définitions}
+
+	\begin{description}[<+->]
+	\item[Tests unitaires] Isole une brique applicative pour valider qu'elle remplisse son rôle, indépendamment de ses dépendances.
+	\item[TDD] \emph{Développement Piloté par les Tests} : commencer à écrire les tests avant de développer la fonctionnalité
+	\item[JUNIT] Framework exécutant les tests unitaires
+	\item[FestAssert] Facilite l'écriture des assertions
+	\item[Mockito] Facilite l'isolation des briques applicatives
+	\end{description}
+	
+\end{frame}
+
+\begin{frame}{Ce qu'il faut retenir...}
+	\framesubtitle{Annotations}
+	
+	Annotations à retenir :
+	\begin{description}[<+->]
+	\item[\texttt{$@$Test}] Déclare un test sur une méthode public sans paramètres ni retour
+	\item[\texttt{$@$InjectMocks}] Remplace les dépendances par des \emph{Mocks}
+	\item[\texttt{$@$Mock}] Déclare un attribut comme étant un mock à injecter via l'annotation \texttt{$@$InjectMocks}
+	\item[\texttt{$@$Spy}] Espionne les appels effectués sur une brique applicative ; donne la possibilité de l'injecter comme un Mock
+	\end{description}
+
+\end{frame}
+
+\begin{frame}{Ce qu'il faut retenir...}
+	\framesubtitle{Methodes}
+	
+	Annotations à retenir :
+	\begin{description}[<+->]
+	\item[\texttt{assertThat}] Début d'une assertion sur un objet (donné en paramètre)
+	\item[\texttt{when}] Défini le comportement d'un \emph{Mock}
+	\item[\texttt{verify}] Vérifie les appels qui ont été effectués sur un \emph{Mock}.
+	\end{description}
+
+\end{frame}
 %Ne remplace pas les tests d'intégration !
+
+\section*{Fin}
+
+\begin{frame}
+	\frametitle{Fin}
+	\begin{center}
+		\huge
+		Merci, des questions ?
+	\end{center}
+\end{frame}
 
 \end{document}
 
