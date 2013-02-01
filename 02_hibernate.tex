@@ -1,7 +1,13 @@
-\documentclass[compress]{beamer}%
+\documentclass[compact]{beamer}%handout
 \usepackage[utf8]{inputenc}
 \usetheme{Warsaw}
 
+
+\mode<handout> {
+	\usepackage{handoutWithNotes}
+	\pgfpagesuselayout{2 on 1 with notes landscape}[a4paper,border shrink=5mm]
+}
+	
 \setbeamertemplate{navigation symbols}{} 
 \useoutertheme{infolines}
 \setbeamertemplate{footline}
@@ -24,6 +30,7 @@
   \small \tableofcontents[currentsection, hideothersubsections]
   \end{frame} 
 }
+
 
 \definecolor{fontcolor}{rgb}{0.92,0.92,0.99}
 \usepackage{listings}
