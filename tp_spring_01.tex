@@ -1,8 +1,8 @@
 \documentclass[small,algo]{dushClass}
 
 
-\title{TP -- Initialisation aux Frameworks}
-\subtitle{Spring}
+\title{TP -- Spring}
+\subtitle{Initialisation aux Frameworks}
 
 \begin{document}
 
@@ -10,13 +10,17 @@
 %% SUJET
 \section{Sujet}
 
-\subsection{Présentation du contexte}
+\subsection{Objectifs}
 
-Pour ce TP, nous reprendrons le sujet du précédent : \emph{la bibliothèque}. Il se décompose en 2 partie :
+Dans ce TP, nous reprendrons \emph{la bibliothèque} du précédent TP afin de lui rajouter une couche métier (business). Il se décomposera en 2 parties : 
 \begin{itemize}
 \item Séparation des préoccupations et injection de dépendances
 \item Coupage de \emph{Spring} à \emph{Hibernate} pour réaliser la couche DAO.
 \end{itemize}
+
+\subsection{Modèle de données}
+
+Le modèle de données, présenté figure \ref{model} \vpageref{model}, est le même que dans le TP sur Hibernate (section : \emph{pour aller plus loin}). Lui sont ajoutés l'aspect d'exemplaire (\texttt{BookCopy}), et d'emprunt (\testtt{Customer}).
 
 \subsection{Cas étudiés}
 
@@ -31,24 +35,24 @@ L'ajout d'une nouvelle référence et d'exemplaires liés suis la procédure ci-
 \begin{enumerate}
 \item\label{add-ihm} L'administrateur renseigne l'identifiant de la libraire et les données sur le livre qu'il souhaite ajouter (code ISBN du livre, titre, description, nombre de pages), ainsi que le nombre d'exemplaires.
 \item Recherche de la librairie par son identifiant, elle doit exister
-\item Vérification que la référence n'existe pas déjà (par son code ISBN), sinon une exception sera levée.
+\item Vérification que la référence n'existe pas déjà (par son code ISBN), sinon la référence est mise à jour
 \item Génération d'un code pour chacun des exemplaires
 \item Sauvegarde de la référence \texttt{Book}, et des exemplaires, en BDD.\\
 \end{enumerate}
 
-Le point \ref{add-ihm} ne fait pas partie du TP. Il sera simuler dans la fonction \texttt{main}.
+Le point \ref{add-ihm} ne fait pas partie du TP. Il sera simulé dans la fonction \texttt{main}.
 
 \subsubsection{Emprunt d'un exemplaire}
 
 Pour emprunter un exemplaire, le processus est :
 \begin{enumerate}
 \item L'utilisateur indique son code client et le code de l'exemplaire qu'il souhaite emprunter
-\item le client et l'exemplaire son rechercher en base, ils doivent exister.
-\item vérifications : l'exemplaire n'est pas déjà emprunter, le client ne doit pas avoir plus de 3 emprunts en cours
+\item le client et l'exemplaire sont recherchés en base, ils doivent exister.
+\item vérifications : l'exemplaire n'est pas déjà emprunté, le client ne doit pas avoir plus de 3 emprunts en cours
 \item ajouter l'exemplaire à la liste des emprunt en cours du client\\
 \end{enumerate}
 
-Le nombre d'exemplaire autorisés doit être configuré dans un fichier \emph{properties}.
+Le nombre d'exemplaires autorisés doit être configuré dans un fichier \emph{properties}.
 
 \subsection{Architecture}
 L'architecture logicielle suit le principe de la \emph{Séparation des Préoccupations}. Elle est présentée figure \ref{tp-spring-soc} \vpageref{tp-spring-soc}.\\
@@ -68,26 +72,33 @@ Les briques logicielles sont :
 \end{description}
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% DI
-\section{Première Partie : Injection de Dépendances}
-
-
-\subsection{Composants déjà présents}
-Afin de gagner du temps, certains composant ont déjà été créés. Si vous souhaitez continuer du TP sur Hibernate, copier
-
-\subsubsection{Interfaces}
-Les interfaces de chaque brique ont été crées. Comme dans la convention de nommage utilisée dans le Référentiel Coordonnées, elle commence par un "\emph{I}" ("i" majuscule).
+\subsection{Composants fournis}
+Afin de gagner du temps, certains composant ont déjà été créés.
 
 \subsubsection{Contexte Spring}
 La configuration principale de Spring est dans le fichier : \texttt{src/main/resources/spring/books-context.xml}.\\
 
-Dans la fonction \texttt{main}, le contexte est déjà instancié et est prêt à l'utilisation.
+Dans la fonction \texttt{main}, le contexte est déjà instancié et est prêt à l'utilisation comme l'était la \texttt{SessinFactory} d'Hibernate lors du premier TP.
+
+\subsubsection{Mapping relationnel}
+Le modèle a été poussé jusqu'à sa version "\emph{Pour aller plus loin}" du premier TP. Le mapping est déjà réalisé ainsi que la configuration par Spring.\\
+
+Cette configuration est faite dans le fichier Spring : \texttt{src/main/resources/spring/books-persistence.xml}.
+
+\subsubsection{Interfaces}
+Les interfaces de chaque brique ont été crées. Comme dans la convention de nommage utilisée dans le Référentiel Coordonnées, elles commencent par un "\emph{I}" ("i" majuscule).
+
 
 \subsubsection{Couche DAO bouchonnée}
 Une fausse implémentation de la couche DAO est présente dans le package \texttt{net.yvesrocher.training.frameworks.dao.mock}. Celle-ci utilise des \texttt{HashMap} en interne pour simuler une véritable base de données.\\
 
 Pour activer cette couche bouchonnée, il faut ajouter le fichier de configuration \emph{Spring} : \texttt{src/main/resources/spring/books-dao-mock.xml}.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% DI
+\section{Première Partie : Injection de Dépendances}
 
 
 \subsection{Déclaration des beans et injection}
@@ -121,7 +132,9 @@ Dans un premier temps, nous ne nous intéresseront qu'au générateur :
 
 \subsubsection{CopyCodeGenerator}
 
-Implémentez les méthodes du bean \texttt{CopyCodeGeneratorImpl}. Il doit utiliser le \texttt{BookDAO} pour trouver un identifiant disponible.
+Implémentez les méthodes du bean \texttt{CopyCodeGeneratorImpl}.\\
+
+Il doit utiliser le \texttt{BookDAO} pour trouver un code disponible.
 
 \subsubsection{BookManager}
 Implémentez la méthode \texttt{BookManagerImpl.createNewBook}. Il doit utiliser le \texttt{CopyCodeGenerator} et le \texttt{BookDAO}.
