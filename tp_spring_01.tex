@@ -8,7 +8,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% SUJET
-\section{Sujet}
+\section{Sujet}\label{spec-sec}
 
 \subsection{Objectifs}
 
@@ -20,9 +20,15 @@ Dans ce TP, nous reprendrons \emph{la bibliothèque} du précédent TP afin de l
 
 \subsection{Modèle de données}
 
-Le modèle de données, présenté figure \ref{model} \vpageref{model}, est le même que dans le TP sur Hibernate (section : \emph{pour aller plus loin}). Lui sont ajoutés l'aspect d'exemplaire (\texttt{BookCopy}), et d'emprunt (\testtt{Customer}).
+Le modèle de données, présenté figure \ref{model} \vpageref{model}, est le même que dans le TP sur Hibernate (section : \emph{pour aller plus loin}). Lui sont ajoutés l'aspect d'exemplaire (\texttt{BookCopy}), et d'emprunt (\texttt{Customer}).
 
-\subsection{Cas étudiés}
+\begin{figure}[ht]\label{model}
+	\center
+	\includegraphics{images/model_real.png}
+	\caption{Modèle de données}
+\end{figure}
+
+\subsection{Cas étudiés}\label{spec-ssec}
 
 Nous allons étudier 2 cas fonctionnels :
 \begin{itemize}
@@ -30,7 +36,7 @@ Nous allons étudier 2 cas fonctionnels :
 \item Emprunt d'un exemplaire par un client%si pas déjà 3 locations...
 \end{itemize}
 
-\subsubsection{Nouvelle référence}
+\subsubsection{Nouvelle référence}\label{spec-sssec}
 L'ajout d'une nouvelle référence et d'exemplaires liés suis la procédure ci-après :
 \begin{enumerate}
 \item\label{add-ihm} L'administrateur renseigne l'identifiant de la libraire et les données sur le livre qu'il souhaite ajouter (code ISBN du livre, titre, description, nombre de pages), ainsi que le nombre d'exemplaires.
@@ -65,10 +71,12 @@ L'architecture logicielle suit le principe de la \emph{Séparation des Préoccup
 
 Les briques logicielles sont :
 \begin{description}
-\item[BookManager] contient les règles métiers telles qu'elles sont décrites dans le cas présentés.
-\item[CopyCodeGenerator] Générateur des codes exemplaires
-\item[BookDAO] couche d'accès aux données \texttt{Book} de la BDD.
-\item[CustomerDAO] couche d'accès aux données \texttt{Customer} de la BDD.
+\item[BookManager] contient les règles métiers pour réaliser les 2 cas étudiés
+\item[CopyCodeGenerator] Générateur des codes exemplaires, utilisant le \texttt{BookStoreDAO} pour trouver un nouveau code.
+\item[BookDAO] couche d'accès aux données \texttt{Book} : recherche de livre à partir du code isbn, sauvegarde et suppression
+\item[BookStoreDAO] couche d'accès aux données \texttt{BookStore} : recherche de la librairie par son nom
+\item[BookCopyDAO] couche d'accès aux données \texttt{BookCopy} : génération d'un code unique, recherche d'un copie par son code
+\item[CustomerDAO] couche d'accès aux données \texttt{Customer} : recherche par ID.
 \end{description}
 
 
@@ -81,18 +89,18 @@ La configuration principale de Spring est dans le fichier : \texttt{src/main/res
 Dans la fonction \texttt{main}, le contexte est déjà instancié et est prêt à l'utilisation comme l'était la \texttt{SessinFactory} d'Hibernate lors du premier TP.
 
 \subsubsection{Mapping relationnel}
-Le modèle a été poussé jusqu'à sa version "\emph{Pour aller plus loin}" du premier TP. Le mapping est déjà réalisé ainsi que la configuration par Spring.\\
-
-Cette configuration est faite dans le fichier Spring : \texttt{src/main/resources/spring/books-persistence.xml}.
+Le modèle présenté figure \ref{model} \vpageref{model} est déjà mappé à la base de données. Il vous faudra peut-être supprimer les tables existant déjà dans votre base locale.
 
 \subsubsection{Interfaces}
 Les interfaces de chaque brique ont été crées. Comme dans la convention de nommage utilisée dans le Référentiel Coordonnées, elles commencent par un "\emph{I}" ("i" majuscule).
 
 
 \subsubsection{Couche DAO bouchonnée}
-Une fausse implémentation de la couche DAO est présente dans le package \texttt{net.yvesrocher.training.frameworks.dao.mock}. Celle-ci utilise des \texttt{HashMap} en interne pour simuler une véritable base de données.\\
+Une fausse implémentation de la couche DAO est présente dans le package \texttt{net.yvesrocher.training.frameworks.dao.mock}. Celle-ci utilise des \texttt{HashMap} en interne pour simuler une véritable base de données.\par
+Pour activer cette couche bouchonnée, il faut ajouter le fichier de configuration \emph{Spring} : \texttt{src/main/resources/spring/books-daomock.xml}. Elle est pré-activée dans le socle du TP fourni.\\
 
-Pour activer cette couche bouchonnée, il faut ajouter le fichier de configuration \emph{Spring} : \texttt{src/main/resources/spring/books-dao-mock.xml}.
+Pour remplir la base de données et lister son contenu, la classe \texttt{net.yvesrocher.training.frameworks.dao.utils.BddMonitorImpl} est présente. En la configurant comme un \emph{singleton}, la base sera automatiquement remplie au démarrage du contexte \emph{Spring}.\par
+Elle expose une méthode \texttt{printAll()} qui écrit dans la console l'intégralité de la BDD.
 
 
 
@@ -100,6 +108,15 @@ Pour activer cette couche bouchonnée, il faut ajouter le fichier de configurati
 %% DI
 \section{Première Partie : Injection de Dépendances}
 
+\subsection{Périmètre de la première partie}
+Dans cette première partie, nous nous intéresserons au principe d'\emph{Inversion de Contrôle} :
+\begin{itemize}
+\item Déclarer un \emph{bean}
+\item Modifier sa \emph{portée} (ou \emph{scope})
+\item Injecter des dépendances\\
+\end{itemize}
+
+Nous travaillerons donc uniquement sur la \emph{couche business}, et utiliseront la couche DAO bouchonnée.
 
 \subsection{Déclaration des beans et injection}
 
@@ -109,41 +126,55 @@ Dans cette partie :
 \begin{enumerate}
 \item Créez une implémentation à l'interface \texttt{IBookManager}
 \item Déclarez la comme un \emph{Bean}\footnote{Rappel : un \emph{bean} est le nom d'une "brique applicative" pour Spring.}
-\item Récupérez une instance à partir du contexte Spring\\
+\item Récupérez une instance à partir du contexte Spring dans la méthode \texttt{main}\\
 \end{enumerate}
 
 Vous pouvez récupérer plusieurs \texttt{IBookManager} et vérifier que ce soit la même instance\footnote{Réalisation d'un classe (exemple : voiture). A ne pas confondre avec une classe qui correspondrait aux plans de la voiture.} qui est renvoyée.\par
-Il est possible de modifier le scope en \texttt{singleton}, puis en \texttt{prototype} pour constater des différences de comportement.
+Modifier ensuite le scope en \texttt{singleton}, puis en \texttt{prototype} pour constater des différences de comportement.
 
 \subsubsection{Première dépendance}
 
 Le \emph{BookManager} ne peut pas travailler seul. Il a besoin du générateur de code d'exemplaire, et de la couche d'accès aux données des livres et des clients.\\
 
-Dans un premier temps, nous ne nous intéresseront qu'au générateur : 
-
 \begin{enumerate}
 \item Créez une implémentation de l'interface \texttt{ICopyCodeGenerator}
 \item Déclarez la comme un \emph{Bean}
-\item Injectez un ICopyCodeGenerator dans le \emph{BookManager}
+\item Injectez un ICopyCodeGenerator dans le \emph{BookManager}\\
 \end{enumerate}
 
+Vérifier qu'en appelant une méthode de \texttt{BookManager}, ce dernier puisse accéder au \texttt{CopyCodeGenerator}.
+
+\subsubsection{Première configuration}
+Ajouter un fichier de propriétés : \texttt{src/main/resources/config/books.properties} avec la propriété : \texttt{borrow.limit}. Récupérez cette valeur (en l'injectant) dans le \texttt{BookManager}.
 
 \subsection{Implémenter les beans}
 
+\subsubsection{BddMonitor}
+
+Configurez le \texttt{BddMonitorImpl} pour être un bean de type singleton. Récupérez le dans la méthode \texttt{main} afin d'afficher le contenu de la base de données.
+
+
 \subsubsection{CopyCodeGenerator}
 
-Implémentez les méthodes du bean \texttt{CopyCodeGeneratorImpl}.\\
-
-Il doit utiliser le \texttt{BookDAO} pour trouver un code disponible.
+Implémentez les méthodes du bean \texttt{CopyCodeGeneratorImpl} :
+\begin{itemize}
+\item appeler le \texttt{CopyBookDAO} pour obtenir un nouveau code
+\end{itemize}
 
 \subsubsection{BookManager}
-Implémentez la méthode \texttt{BookManagerImpl.createNewBook}. Il doit utiliser le \texttt{CopyCodeGenerator} et le \texttt{BookDAO}.
+Implémentez la méthode \texttt{BookManagerImpl.insertReference} pour remplir le cahier des charges partie \ref{spec-sec} \ref{spec-ssec} \ref{spec-sssec}.\\
+
+S'il reste du temps, implémenter la méthode \texttt{BookManagerImpl.borrowBook}.
 
 \subsubsection{Tester}
 
-Des méthodes statiques sont présentes sur les DAO afin de lister le contenu de la base de données.
+Vérifier le contenu de la base de données avant après pour valider le bon fonctionnement des méthodes.
 
+\subsection{Pour aller plus loin}
 
+Déclarer un autre bean répondant à l'interface \texttt{ICopyCodeGenerator}. Que ce passe-t-il à la création du bean \texttt{BookManager} ?\\
+
+Nommer les générateurs et définissez celui qui doit être injecter dans le \texttt{BookManager}. Récupérez l'autre dans la méthode \texttt{main}.
 
 
 
@@ -152,15 +183,26 @@ Des méthodes statiques sont présentes sur les DAO afin de lister le contenu de
 \section{Seconde Partie : Couche d'Accès aux Données}
 % Spring + Hibernate
 
+\subsection{Périmètre de la seconde partie}
+Dans cette seconde partie, nous nous intéressons à la couche d'accès au données. Nous sohaitons la connecter à une base de données SQL à l'aide d'\emph{Hibernate}.
+
+
 \subsection{Configuration du contexte Spring}
 
-Avant tout, il faut configurer Spring pour qu'il puisse injecter la \texttt{SessionFactory}. Un fichier de configuration est prêt : \texttt{src/main/resources/spring/books-dao-hibernate.xml}. Ajoutez le à la liste lors de la création du contexte Spring.\\
+Avant tout, il faut configurer Spring pour qu'il puisse injecter la \texttt{SessionFactory}. Un fichier de configuration est prêt : \texttt{src/main/resources/spring/books-persistence.xml}. Ajoutez le à la liste lors de la création du contexte Spring.\\
 
-Les nouveaux beans utilisant hibernate risquent de rentrer en conflit avec les bouchons. Retirez le fichier \texttt{src/main/resources/spring/books-dao-mock.xml} de la liste des fichiers de configuration.
+Les nouveaux beans utilisant hibernate risquent de rentrer en conflit avec les bouchons. Retirez le fichier \texttt{src/main/resources/spring/books-daomock.xml} de la liste des fichiers de configuration.
+
 
 \subsection{Ré-implémenter la couche DAO}
 
-Ré-implémenter la couche DAO en utilisant Hibernate.
+Implémenter chacune des briques DAO à partir de son interface :
+\begin{itemize}
+\item IBookCopy
+\item IBookDAO
+\item IBookStoreDAO
+\item ICustomerDAO
+\end{itemize}
 
 
 
@@ -180,8 +222,15 @@ public class EmployeeDAOImpl implements IEmployeeDAO {
 \subsubsection{Ouverture de la session}
 La session est ouverte automatiquement lors de l'ouverture d'une transaction. On respecte le pattern : \emph{1 transaction = 1 session}.\\
 
+Rappel, les transaction sont gérées avec l'annotation \texttt{$@$Transactionnal}
+
 % pas dans le RC : open session in view.
 
+
+
+%%%%%%%%%%%%%%%%%%%%
+% Suite ...
+% Cette configuration est faite dans le fichier Spring : \texttt{src/main/resources/spring/books-persistence.xml}.
 
 \end{document}
 
