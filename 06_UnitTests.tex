@@ -74,6 +74,7 @@
 	
 	Intérêts des tests unitaires :
 	\begin{itemize}[<+->]
+	\item peuvent être exécutés automatiquement (intégration continue, maven)
 	\item tester tous les cas possibles d'une briques : passant et non-passant
 	\item assurer la non-régression sur les fonctionnalités testées, quelque soit le développeur
 	\item ne nécessite pas d'avoir fini l'application pour tester un composant
@@ -242,9 +243,9 @@ public void testAdd() {
 	
 	\begin{lstlisting}
 // types primitifs
-assertThat(12 - 9).isEqualTo(3)
-                  .isGreaterThanOrEqualTo(3)
-                  .isLessThan(4);
+assertThat(calculatrice.add(1,2)).isEqualTo(3)
+                                 .isGreaterThanOrEqualTo(3)
+                                 .isLessThan(4);
 
 // String
 assertThat(frodo.getName()).isEqualTo("Frodo");
@@ -459,7 +460,7 @@ public void test_create_new_employee() {
 \begin{frame}{Ce qu'il faut retenir...}
 	\framesubtitle{Methodes}
 	
-	Annotations à retenir :
+	Méthodes à retenir :
 	\begin{description}[<+->]
 	\item[\texttt{assertThat}] Début d'une assertion sur un objet (donné en paramètre)
 	\item[\texttt{when}] Défini le comportement d'un \emph{Mock}
