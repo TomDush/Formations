@@ -81,36 +81,34 @@
 		\item correspondance \emph{modèle objet interne} $\leftrightarrow$ \emph{contrat WSDL}
 		\item Interface WEB : suivi des pipelines
 		\end{itemize}
-	\item[Pipelines] Intégration de données par fichiers CSV
+	\item[Pipelines] Intégration de données par fichiers CSV (jar exécutable)
 		\begin{itemize}
 		\item Démarrage/Arrêt d'un \emph{démon}
 		\item Détection de l'arrivée de fichiers
 		\item EAI et lecture de fichier
 		\item Parallélisation des traitements
 		\end{itemize}
-	\item[Batch] Exports, traitements types fusion, statistiques
+	\item[Batch] Exports, traitements de types : fusion, statistiques, \dots
 	\end{description}
 \end{frame}
 
 
-\begin{frame}{Organisation du code}
+\begin{frame}{Organisation des modules}
+	\framesubtitle{En utilisant \emph{Maven}}
 	
 	\begin{block}{Maven}
-	Le référentiel coordonnées utilise \emph{Maven} pour : 
-	\begin{itemize}
-	\item la gestion des dépendances
-	\item la compilation 
-	\item le déploiement des pipelines et batch
-	\item configuration du poste de travail : \emph{Eclipse}\par
-	(1 projet maven = 1 projet Eclipse)
-	\item tests en local des webservices et IHM
-	\end{itemize}
+	\emph{Apache Maven} est un logiciel de gestion de projet. Basé sur le concept de \emph{Project Object Model} (POM), il gère le processus de compilation, rapports, \dots
 	\end{block}
 	
 	\pause
-	\begin{block}{Projets Maven}
-	Chaque modules du RC est représenté par un sous-projet Maven.
-	\end{block}
+	Le Référentiel Coordonnées utilise \emph{Maven} pour : 
+	\begin{itemize}
+	\item la gestion des dépendances
+	\item le packaging : compilation, tests automatique, archives zip et ear
+	\item le déploiement des pipelines et batch (FTP)
+	\item configuration du poste de travail : \emph{Eclipse}
+	\item tests en local des Webservices et IHM
+	\end{itemize}
 
 \end{frame}
 
@@ -118,16 +116,16 @@
 	
 	Le référentiel coordonnées est répartie sur 6 projets \emph{Maven} :
 	\begin{itemize}[<+->]
-	\item \textbf{addressrepository} : \emph{version, déclarations des dépendances}
+	\item \textbf{addressrepository} : \emph{version, dépendances, modules (pom)} 
 		\begin{itemize}
-		\item \textbf{address-core} : \emph{coeur de l'application}\par
+		\item \textbf{address-core} : \emph{coeur de l'application} (jar)\par
 		package : \texttt{net.yvesrocher.services.address.core}
-		\item \textbf{address-pipelines} : \emph{Jar exécutable (démon)}\par
+		\item \textbf{address-pipelines} : \emph{démon (jar exécutable)}\par
 		package : \texttt{net.yvesrocher.services.address.pipelines}
 		\item \textbf{address-webservices} : \emph{War du webservices}\par
 		package : \texttt{net.yvesrocher.services.address.webservices}
 		\item \textbf{address-ear} : \emph{Package le war en un EAR}
-		\item \textbf{address-batch} : \emph{Batchs utilisant le coeur V3, jar exécutable}\par
+		\item \textbf{address-batch} : \emph{Batchs utilisant le coeur V3 ( jar exécutable)}\par
 		package : \texttt{net.yvesrocher.services.address.batch}
 		\end{itemize}
 	\end{itemize}
@@ -138,7 +136,7 @@
 
 \begin{frame}{Outils et frameworks utilisés}
 
-	\begin{description}
+	\begin{description}[<+->]
 	\item[Spring] Inversion de contrôle, gestion des contextes, transactions BDD
 	\item[Hibernate] \emph{Mapping Relationnel Objet}
 	\item[Hibernate Validator] Validation des données
@@ -151,7 +149,7 @@
 
 \subsection{Compilation et déploiement}
 
-\begin{frame}{Compilation et déploiement}
+\begin{frame}[fragile]{Compilation et déploiement}
 
 	\begin{block}{Compilation}
 	Maven exécute les tests unitaires et crée les binaires s'il n'y a pas d'erreur. Les binaires sont présents dans le répertoire \texttt{target} de chaque module.
@@ -168,15 +166,126 @@ mvn clean install -DdeployPipelines
 
 \section{Coeur applicatif}
 
-\subsection{Couche d'accès au données}
+\subsection{Configuration}
 
-\begin{frame}{Cartographie du coeur}
-
+\begin{frame}{Inversion de Contrôle}
+	\framesubtitle{Avec \emph{Spring} !}
+	
+	\begin{block}{Spring}
+	Spring fournit l'inversion de contrôle : cycle de vie des \emph{beans}, injection de dépendances et gestion de la configuration.
+	\end{block}
+	
+	\pause
+	Les fichiers de configuration se trouvent dans \texttt{src/main/resources} :
+	\begin{itemize}[<+->]
+	\item \texttt{spring} : fichiers de configuration \emph{Spring} :
+		\begin{itemize}[<+->]
+		\item \texttt{addressrepository-core.xml} : inclue les fichiers nécessaires
+		\item \texttt{addressrepository-businessservice.xml} : paramètre le coeur pour être intégré à un autre Webservice
+		\end{itemize}
+	\item \texttt{config} : fichiers de paramétrage (\emph{properties})
+	\end{itemize}
+	
 \end{frame}
-% Pattern "open session in view"
+
+\subsection{Gestion des contextes}
 % Scope "context"
 
+\begin{frame}{Gestion des contextes du RC}
+	\framesubtitle{Porté \emph{Spring} : \texttt{context}}
+	
+	\begin{block}{Scope \texttt{context}}
+En plus des scopes classiques \texttt{singleton} et \texttt{prototype}, le scope \texttt{context} défini un singleton d'un contexte.	
+	\end{block}
+	
+	\pause
+	\begin{itemize}
+	\item Seule une instance de bean contexté est créée pour chaque contexte.
+	\end{itemize}
+
+
+\end{frame}
+
+\begin{frame}{Distribution sur les contextes}
+	\framesubtitle{Une instance du coeur est créée pour chaque contexte}
+	\includegraphics[width=\textwidth]{images/rc_arch_contexts.png}
+\end{frame}
+
+
 \subsection{Plan et principales briques logicielles}
+
+\begin{frame}{Cartographie du coeur}
+	\includegraphics[width=\textwidth]{images/rc_arch_business.png}
+%	[height=8cm]
+\end{frame}
+
+\begin{frame}{Briques applicatives du RC}
+
+	\begin{itemize}
+	\item \textbf{CustomerManager} Point d'entrée du coeur
+		\begin{itemize}
+		\item exécute la validation
+		\item Recherche les doublons
+		\item Distribue : nouveau client, mise à jour, prospect
+		\end{itemize}
+	\item \textbf{Validator} Valide les données d'un client, de ses comptes et coordonnées.
+	\item \textbf{AddressManager} Traitement des coordonnées prospectes.
+	\item \textbf{CustomerMerging} Confronte les données présentes en base à la mise à jour
+	\item \textbf{OptingManager} Règle générale sur les consentements (propagations, flag)
+	\item \textbf{OptingCalculator} Calcul sur les consentements
+	\end{itemize}
+	
+\end{frame}
+
+\subsection{Couche d'accès au données}
+
+\begin{frame}{Couche d'accès aux données}
+	\framesubtitle{Object Relational Mapping par \emph{Hibernate}}
+	
+	\begin{block}{Hibernate}
+	Le framework \emph{Hibernate} est utilisé pour gérer la relation entre le modèle objet et la base de données.
+	\end{block}
+	
+	\pause
+	\begin{block}{Session Factory}
+	La \texttt{SessionFactory} d'Hibernate est configuré par Spring dans le fichier \texttt{context-persistence.xml}.\par
+	Elle a pour scope le \textbf{context} : une session factory par schéma.	
+	\end{block}
+
+\end{frame}
+
+\begin{frame}{Configuration des sources de données}
+
+	Les sources de données sont fournie à \emph{Spring} par le \texttt{DatasourceProvider}. Il se repose sur 2 implémentations de \emph{IDatasourceFactory} :
+	\begin{itemize}
+	\item \texttt{FileDatasourceFactoryImpl} : fichier properties présent sur UNIX (pipelines, batch)
+	\item \texttt{JndiDatasourceFactoryImpl} : datasources présentes dans un dictionnaire JNDI
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Pattern : \emph{Open Session In View}}
+
+	\begin{block}{Open Session In View}
+	Le pattern \emph{Open Session In View} consiste à ouvrir la session le plus tôt possible, et la fermée le plus tard possible. Ainsi, les relations lazy ne sont chargées qu'au dernier moment et seulement si nécessaire.
+	\end{block}
+	
+	\pause
+	\begin{block}{Ouverture des sessions}
+	L'annotation \texttt{$@$OpenSession} permet d'ouvrir la session pour la méthode annotée, ou toutes les méthodes de la classes annotée.
+	\end{block}
+	
+	\pause
+	\begin{block}{Transactions}
+	En revanche, les transactions sont positionnées pour garantir la cohérence de la base de données. Elle sont configurée par l'annotation \texttt{$@$Transactional}
+	\end{block}
+
+\end{frame}
+
+% Recherche des datasources
+% Configuration de la session factory
+% Pattern "open session in view"
+% gestion des transactions
 
 \subsection{API de tests unitaires}
 % @DatabaseScripts
