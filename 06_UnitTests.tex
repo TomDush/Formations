@@ -1,8 +1,11 @@
-\documentclass[compress]{beamer}%
+\documentclass[compress]{beamer}% handout
 \usepackage[utf8]{inputenc}
 \usetheme{Warsaw}
 
-% \usepackage
+\mode<handout> {
+	\usepackage{handoutWithNotes}
+	\pgfpagesuselayout{2 on 1 with notes landscape}[a4paper,border shrink=5mm]
+}
 
 \title{Initiation aux frameworks : \emph{JUnit}}
 \subtitle{Automatiser les tests unitaires avec JUnit, FestAssert et Mockito}
