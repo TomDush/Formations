@@ -60,6 +60,37 @@
 %% ARCHITECTURE
 \section{Architecture générale}
 
+\subsection{Gestion des sources}
+
+\begin{frame}[fragile]{Sources sous gestionnaire de version}
+	\framesubtitle{Subversion, ou SVN)
+
+	\begin{block}{SVN)
+	SVN est un gestionnaire de version. Il conserve l'historique de modifications des sources associés à des méta-données : historique, auteur, ...
+	\end{block}
+	
+	\pause
+	URL : 
+	\begin{lstlisting}
+http://subversion.yvesrocher.com:9030/REFERENTIEL_COORDONNEES/
+	\end{lstlisting}	
+
+\end{frame}
+
+\begin{frame}{Organisation des branches/tags}
+	\framesubtitle{\texttt{trunk}, \texttt{branches}, \texttt{tags}, \dots}
+	
+	Le répository s'organise suivant la convention SVN :
+	\begin{description}[<+->]
+	\item[trunk] Version en cours de développement
+	\item[tags] Snaphot des sources pour chaque version livrée\par
+	Exemple de nommage : \texttt{T_V3.1.1_RELEASE_Mep_2013_01_31}
+	\item[branches] Copies des tags afin d'apporter des corrections
+	\end{description}
+
+\end{frame}
+
+
 \subsection{Couches applicatives et modules}
 
 \begin{frame}{Référentiel Coordonnées}
@@ -289,6 +320,19 @@ En plus des scopes classiques \texttt{singleton} et \texttt{prototype}, le scope
 
 \subsection{API de tests unitaires}
 % @DatabaseScripts
+
+\begin{frame}{Tests unitaires dans le RC}
+	\framesubtitle{Outils untilisés}
+	
+	\begin{description}
+	\item[JUNIT] Framework de tests unitaires
+	\item[FestAssert] Écriture des assertions dans les tests
+	\item[Mockito] Isole les beans business afin de pouvoir les isoler avant de les tester
+	\item[HSQL] Base de données en mémoire vive pour tester les DAO
+	\item[DBUnit] Charge/Décharge les données de tests dans la base HSQL
+	\end{description}
+
+\end{frame}
 
 \section{Webservices et IHM}
 
