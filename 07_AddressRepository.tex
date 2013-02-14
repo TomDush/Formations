@@ -85,7 +85,7 @@ http://subversion.yvesrocher.com:9030/REFERENTIEL_COORDONNEES/
 	\item[trunk] Version en cours de développement
 	\item[tags] Snaphot des sources pour chaque version livrée\par
 	Exemple de nommage : \texttt{T_V3.1.1_RELEASE_Mep_2013_01_31}
-	\item[branches] Copies des tags afin d'apporter des corrections
+	\item[branches] Copies des tags afin d'apporter des corrections (support)
 	\end{description}
 
 \end{frame}
@@ -322,7 +322,7 @@ En plus des scopes classiques \texttt{singleton} et \texttt{prototype}, le scope
 % @DatabaseScripts
 
 \begin{frame}{Tests unitaires dans le RC}
-	\framesubtitle{Outils untilisés}
+	\framesubtitle{Outils utilisés}
 	
 	\begin{description}
 	\item[JUNIT] Framework de tests unitaires
@@ -334,7 +334,64 @@ En plus des scopes classiques \texttt{singleton} et \texttt{prototype}, le scope
 
 \end{frame}
 
+\begin{frame}{API de test}
+	\framesubtitle{Éléments principaux de l'API}
+
+	\begin{itemize}
+	\item classes parentes en fonction du besoin
+	\item sur-couche de DBUnit
+	\item assertions simplifiées sur les DTO
+	\item génération de données de tests
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Classes parentes de tests unitaires}
+
+	Classes principales à surcharger :
+	\begin{description}[<+->]
+	\item[JunitTest] Super-classe principale des tests unitaire dans le RC. Initialise le contexte Spring
+	\item[DBUnitJunitTest] Super-classe pour les tests utilisant la base de données HSQL
+	\item[ContextedJunitTest] Super-classe des tests se produisant dans un contexte donné
+	\end{description}
+\end{frame}
+
+\begin{frame}{Sur-couche de DBUnit}
+	\framesubtitle{Annotation \texttt{$@$DatabaseScripts}}
+	
+	\begin{block}{DBunit}
+	DBunit est un outils chargeant, vidant ou exportant le contenu d'une BDD, à partir ou vers des fichiers XML.
+	\begin{end}
+	
+	\pause
+	L'annotation \texttt{$@$DatabaseScripts}, développée pour le RC :
+	\begin{itemize}
+	\item positionnée sur les méthodes de tests, ou au niveau classe
+	\item définit les fichiers à utiliser pour charger la BDD
+	\item les \texttt{locations} sont héritées de la classe, et des classes parentes
+	\item pas d'héritage si \texttt{inheritsLocations} est \texttt{true}
+	\end{itemize}
+\end{frame}
+
 \section{Webservices et IHM}
+
+\subsection{Webservice, CXF}
+
+\begin{frame}{Convertisseurs}
+	\framesubtitle{DTO $\leftrightarrow$ WSDL}
+	
+	\begin{block}{CXF}
+	L'application utilise CXF, déclaré avec \emph{Spring}, pour communiquer par webservice.
+	\end{block}
+	
+	\pause
+	\begin{block}{Webservice RC}
+	Toute la logique se situe dans le core. Il ne reste que que les convertisseurs d'objets entre le modèle du contrat WSDL, et des DTO.
+	\end{block}
+
+\end{frame}
+
+
+\subsection{IHM de monitoring}
 
 % parler des bean de mappers
 % CXF
