@@ -63,9 +63,9 @@
 \subsection{Gestion des sources}
 
 \begin{frame}[fragile]{Sources sous gestionnaire de version}
-	\framesubtitle{Subversion, ou SVN)
+	\framesubtitle{Subversion, ou SVN}
 
-	\begin{block}{SVN)
+	\begin{block}{SVN}
 	SVN est un gestionnaire de version. Il conserve l'historique de modifications des sources associés à des méta-données : historique, auteur, ...
 	\end{block}
 	
@@ -78,18 +78,32 @@ http://subversion.yvesrocher.com:9030/REFERENTIEL_COORDONNEES/
 \end{frame}
 
 \begin{frame}{Organisation des branches/tags}
-	\framesubtitle{\texttt{trunk}, \texttt{branches}, \texttt{tags}, \dots}
+	\framesubtitle{\texttt{trunk}, \texttt{branches}, \texttt{tags}, ...}
 	
-	Le répository s'organise suivant la convention SVN :
+	Le \emph{repository} s'organise suivant la convention SVN :
 	\begin{description}[<+->]
 	\item[trunk] Version en cours de développement
 	\item[tags] Snaphot des sources pour chaque version livrée\par
-	Exemple de nommage : \texttt{T_V3.1.1_RELEASE_Mep_2013_01_31}
+	Exemple de nommage : \texttt{T\_V3.1.1\_RELEASE\_Mep\_2013\_01\_31}
 	\item[branches] Copies des tags afin d'apporter des corrections (support)
 	\end{description}
 
 \end{frame}
 
+\subsection{Outils utilisés}
+
+\begin{frame}{Outils et frameworks utilisés}
+
+	\begin{description}[<+->]
+	\item[Spring] Inversion de contrôle, gestion des contextes, transactions BDD
+	\item[Hibernate] \emph{Mapping Relationnel Objet}
+	\item[Hibernate Validator] Validation des données
+	\item[SLF4J] API de log, utilise \emph{LOG4J} en backend
+	\item[Commons Apache] Utilitaires sur les chaines de caractères, la détection des fichiers, ...
+	\item[JUNIT] Tests unitaires (utilisé avec \emph{Mockito} et \emph{FestAssert})
+	\end{description}
+	
+\end{frame}
 
 \subsection{Couches applicatives et modules}
 
@@ -123,6 +137,8 @@ http://subversion.yvesrocher.com:9030/REFERENTIEL_COORDONNEES/
 	\end{description}
 \end{frame}
 
+
+\subsection{Compilation et déploiement}
 
 \begin{frame}{Organisation des modules}
 	\framesubtitle{En utilisant \emph{Maven}}
@@ -163,23 +179,6 @@ http://subversion.yvesrocher.com:9030/REFERENTIEL_COORDONNEES/
 
 \end{frame}
 
-\subsection{Outils utilisés}
-
-\begin{frame}{Outils et frameworks utilisés}
-
-	\begin{description}[<+->]
-	\item[Spring] Inversion de contrôle, gestion des contextes, transactions BDD
-	\item[Hibernate] \emph{Mapping Relationnel Objet}
-	\item[Hibernate Validator] Validation des données
-	\item[SLF4J] API de log, utilise \emph{LOG4J} en backend
-	\item[Commons Apache] Utilitaires sur les chaines de caractères, la détection des fichiers, ...
-	\item[JUNIT] Tests unitaires (utilisé avec \emph{Mockito} et \emph{FestAssert})
-	\end{description}
-	
-\end{frame}
-
-\subsection{Compilation et déploiement}
-
 \begin{frame}[fragile]{Compilation et déploiement}
 
 	\begin{block}{Compilation}
@@ -199,8 +198,8 @@ mvn clean install -DdeployPipelines
 
 \subsection{Configuration}
 
-\begin{frame}{Inversion de Contrôle}
-	\framesubtitle{Avec \emph{Spring} !}
+\begin{frame}{Configuration}
+	\framesubtitle{Inversion de Contrôle, avec \emph{Spring} !}
 	
 	\begin{block}{Spring}
 	Spring fournit l'inversion de contrôle : cycle de vie des \emph{beans}, injection de dépendances et gestion de la configuration.
@@ -255,7 +254,7 @@ En plus des scopes classiques \texttt{singleton} et \texttt{prototype}, le scope
 	\begin{itemize}
 	\item \textbf{CustomerManager} Point d'entrée du coeur
 		\begin{itemize}
-		\item exécute la validation
+		\item Exécute la validation
 		\item Recherche les doublons
 		\item Distribue : nouveau client, mise à jour, prospect
 		\end{itemize}
@@ -263,7 +262,7 @@ En plus des scopes classiques \texttt{singleton} et \texttt{prototype}, le scope
 	\item \textbf{AddressManager} Traitement des coordonnées prospectes.
 	\item \textbf{CustomerMerging} Confronte les données présentes en base à la mise à jour
 	\item \textbf{OptingManager} Règle générale sur les consentements (propagations, flag)
-	\item \textbf{OptingCalculator} Calcul sur les consentements
+	\item \textbf{OptingCalculator} Calculs des consentements
 	\end{itemize}
 	
 \end{frame}
@@ -324,7 +323,7 @@ En plus des scopes classiques \texttt{singleton} et \texttt{prototype}, le scope
 \begin{frame}{Tests unitaires dans le RC}
 	\framesubtitle{Outils utilisés}
 	
-	\begin{description}
+	\begin{description}[<+->]
 	\item[JUNIT] Framework de tests unitaires
 	\item[FestAssert] Écriture des assertions dans les tests
 	\item[Mockito] Isole les beans business afin de pouvoir les isoler avant de les tester
@@ -337,22 +336,23 @@ En plus des scopes classiques \texttt{singleton} et \texttt{prototype}, le scope
 \begin{frame}{API de test}
 	\framesubtitle{Éléments principaux de l'API}
 
-	\begin{itemize}
-	\item classes parentes en fonction du besoin
-	\item sur-couche de DBUnit
-	\item assertions simplifiées sur les DTO
-	\item génération de données de tests
+	Éléments développés dans le RC pour faciliter l'écriture des tests
+	\begin{itemize}[<+->]
+	\item classes parentes pré-configurée
+	\item sur-couche de \emph{DBUnit}
+	\item assertions spécifique sur les DTO (avec \emph{FestAssert})
+	\item méthodes de génération de données de tests
 	\end{itemize}
 \end{frame}
 
 \begin{frame}{Classes parentes de tests unitaires}
 
 	Classes principales à surcharger :
-	\begin{description}[<+->]
-	\item[JunitTest] Super-classe principale des tests unitaire dans le RC. Initialise le contexte Spring
-	\item[DBUnitJunitTest] Super-classe pour les tests utilisant la base de données HSQL
-	\item[ContextedJunitTest] Super-classe des tests se produisant dans un contexte donné
-	\end{description}
+	\begin{itemize}[<+->]
+	\item \textbf{SimpleJunitTest} : Super-classe principale des tests unitaire dans le RC. Initialise le contexte Spring
+	\item \textbf{DBUnitTest} : Initialise la BDD HSQL et configure Hibernate pour l'utiliser
+	\item \textbf{ContextedJunitTest} : permet l'injection de \emph{beans contextés} dans la classe de test
+	\end{itemize}
 \end{frame}
 
 \begin{frame}{Sur-couche de DBUnit}
@@ -360,7 +360,7 @@ En plus des scopes classiques \texttt{singleton} et \texttt{prototype}, le scope
 	
 	\begin{block}{DBunit}
 	DBunit est un outils chargeant, vidant ou exportant le contenu d'une BDD, à partir ou vers des fichiers XML.
-	\begin{end}
+	\end{block}
 	
 	\pause
 	L'annotation \texttt{$@$DatabaseScripts}, développée pour le RC :
@@ -374,30 +374,166 @@ En plus des scopes classiques \texttt{singleton} et \texttt{prototype}, le scope
 
 \section{Webservices et IHM}
 
-\subsection{Webservice, CXF}
+\subsection{Module webservices RC}
 
-\begin{frame}{Convertisseurs}
-	\framesubtitle{DTO $\leftrightarrow$ WSDL}
-	
-	\begin{block}{CXF}
-	L'application utilise CXF, déclaré avec \emph{Spring}, pour communiquer par webservice.
+\begin{frame}{Module webservices RC}
+
+	\begin{block}{Module Webservices du RC}
+	Ce module est déployé sur un serveur d'applications (type \emph{Websphère}).\par
+	Il expose des webservices et fait le lien avec le coeur RC
 	\end{block}
 	
 	\pause
-	\begin{block}{Webservice RC}
-	Toute la logique se situe dans le core. Il ne reste que que les convertisseurs d'objets entre le modèle du contrat WSDL, et des DTO.
-	\end{block}
+	\begin{itemize}[<+->]
+	\item Pas de logique métier en dehors de la règle A : seul le compte correspondant au réseau de l'appel est pris en compte.
+	\item Package des classes non générées :\par
+	\texttt{net.yvesrocher.services.address.webservices}
+	\item la majorité du module sont les \emph{mapper} : DTO $\leftrightarrow$ WSDL
+	\end{itemize}
 
 \end{frame}
 
 
 \subsection{IHM de monitoring}
 
-% parler des bean de mappers
-% CXF
-% Spring MVC
+\begin{frame}{IHM de monitoring}
+	\framesubtitle{Avec \emph{Spring MVC}}
+	
+	\begin{block}{Spring MVC}
+	\textbf{Dispatcher} : en fonction de l'URL d'appel, trouve la méthode la plus appropriée. La méthode réalise l'action et indique la vue à utiliser.	
+	\end{block}
+	
+	\pause
+	\begin{itemize}
+	\item package des \emph{contrôleurs} :\par
+	\texttt{net.yvesrocher.services.address.webservices.servlet. controller}
+	\end{itemize}
+
+\end{frame}
+
 
 \section{Pipelines}
+
+\subsection{Module Pipelines}
+
+\begin{frame}{Module des pipelines}
+
+	\begin{block}{Pipelines}
+	Application \emph{standalone} de type démon. Elle détecte l'arrivée de fichiers, détermine leur type et les traite.
+	\end{block}
+	
+	\pause
+	Parties des pipelines :
+	\begin{itemize}[<+->]
+	\item \textbf{démon} : démarrage et arrêt de l'application
+	\item \textbf{configuration} : quels sont les répertoires à scanner, quels traitements
+	\item \textbf{gestion des traitements} : limite du nombre de traitements simultanés, global et par contexte
+	\end{itemize}
+
+\end{frame}
+
+\subsection{Démon des pipelines}
+
+\begin{frame}{Démon pipelines}
+
+	\begin{block}{Démon}
+	Déployé dans une archive ZIP, contient un jar, ses dépendances et son paramétrage : fichiers de configuration, fichiers \emph{scriptella}.\par
+	La partie démon est implémenté dans la classe \texttt{main}.
+	\end{block}
+
+	\pause
+	\begin{itemize}
+	\item Écoute sur un port, configurable : \texttt{Socket TCP}
+	\item Transmission de chaine de caractères à travers la \texttt{socket} pour arrêter le démon, connaitre sa version ou son état.
+	\end{itemize}
+
+	\pause
+	\begin{exampleblock}{Évolutions possibles}
+	Normaliser cette communication par RPC Java (Remote Procedure Call).
+	\end{exampleblock}
+
+\end{frame}
+
+\subsection{Configuration}
+
+\begin{frame}[containsverbatim]{Configuration des pipelines}
+	\framesubtitle{Déclaration des flux d'entrée standard}
+	
+	\lstset{language=XML}
+	\begin{lstlisting}
+<pipelinesConfiguration>
+	<dataInputs>
+		<csvFileFlux id="classicCsv">
+			<encoding>UTF-8</encoding>
+			<separator>;</separator>
+			<quote>''</quote>
+		</csvFileFlux>
+	</dataInputs>
+	
+	<pipelines>
+		<!-- Pipelines standardises -->
+		<pipeline enabled="true">
+			<context>
+				<brandId>YR</brandId>
+				<countryId>RU</countryId>
+			</context>
+			<name>YR/RU/standard/update</name>
+			<location>YRRU/standard</location>
+			<discriminator>[A-Za-z]{4}_(SYN|REP|PRO)_.*</discriminator>
+			<standardMethod />
+		</pipeline>
+		
+	</pipelines>
+</pipelinesConfiguration>
+	\end{lstlisting}
+
+\end{frame}
+
+
+\begin{frame}[containsverbatim]{Configuration des pipelines}
+	\framesubtitle{Déclaration d'un flux non standard}
+	
+	\lstset{language=XML}
+	\begin{lstlisting}
+...
+		<pipeline enabled="true">
+			<name>YR/RU/_reprise/isam</name>
+			<location>YRRU/scriptella</location>
+			<discriminator>[A-Za-z]{4}_REP_ISAM_.*</discriminator>
+			<context>
+				<brandId>YR</brandId>
+				<countryId>RU</countryId>
+				<language>ru</language>
+			</context>
+			<scriptellaMethod csvFile="classicCsv">
+				<mapperScript>isam/reprise/isam_yrru.mapper.js</mapperScript>
+				<nature>REPRISE</nature>
+				<pipelineName>20_diamant</pipelineName>
+				<properties>
+					<processType>REPRISE</processType>
+					<applicationCode>ISAM</applicationCode>
+					<conCode>VPM</conCode>
+					<pchCode>VPM</pchCode>
+					<copScopeDefault>VPM</copScopeDefault>
+					<bevCode>REP</bevCode>
+					<styCode>SI</styCode>
+					<copRequester>ISAM</copRequester>
+				</properties>
+			</scriptellaMethod>
+		</pipeline>
+...
+	\end{lstlisting}
+
+\end{frame}
+
+
+\begin{frame}{Gestion des traitements}
+
+	\includegraphics[width=\textwidth]{images/rc_pipelines.png}
+
+\end{frame}
+
+\lstset{language=JAVA}
 
 % configuration
 % timers
